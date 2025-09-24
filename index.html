@@ -3,8 +3,11 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>In Love</title>
+  <title>Love Page — Pastel Icons + BGM</title>
   <style>
+    :root{
+      --pink:#e75480;
+    }
     body{
       margin:0;
       background:#fff;
@@ -16,30 +19,55 @@
       justify-content:center;
       height:100vh;
       gap: 12px;
+      cursor: crosshair;
     }
-    .heart{position: fixed; left:0; top:0; transform: translate(-50%, -50%); pointer-events: none; will-change: transform, opacity;}
-    .heart svg{display:block; filter: drop-shadow(0 2px 6px rgba(0,0,0,.25));}
+    .heart, .love{position: fixed; left:0; top:0; transform: translate(-50%, -50%); pointer-events: none; will-change: transform, opacity;}
+    .heart svg{display:block; filter: drop-shadow(0 2px 6px rgba(0,0,0,.2));}
+    .love{font-size: 28px;}
+
     .center-text{
       position: relative;
       z-index: 10;
       font-size: 2.5rem;
       font-weight: 500;
       text-align: center;
-      color: #e75480;
+      color: var(--pink);
+      user-select: none;
     }
     .counter{
       position: relative;
       z-index: 10;
       font-size: 1.5rem;
       font-weight: 400;
-      color: #e75480;
+      color: var(--pink);
+      user-select: none;
     }
+
+    /* Music button */
+    .music-btn{
+      position: fixed; right: 14px; top: 14px; z-index: 20;
+      background: #fff; color:#111; border:1px solid rgba(0,0,0,.1);
+      border-radius: 999px; padding: 8px 12px; font-weight: 600; font-size: 14px;
+      box-shadow: 0 6px 20px rgba(0,0,0,.06);
+      cursor: pointer; user-select: none;
+    }
+    .music-btn.pulse{ animation: pulse 1.2s ease-in-out infinite; }
+    @keyframes pulse{ 0%,100%{ transform:scale(1) } 50%{ transform:scale(1.07) } }
   </style>
 </head>
 <body>
-  <div class="center-text">Hữu Hưng 💖 Thúy Bình</div>
+  <button class="music-btn" id="musicBtn" aria-pressed="false">🎵 Bật nhạc</button>
+
+  <div class="center-text">Couple Text 💖</div>
   <div class="counter" id="dayCounter">Đã bên nhau 0 ngày</div>
+
+  <audio id="bgm" autoplay loop preload="auto">
+    <!-- Đặt file 'iloveyou3000.mp3' cùng thư mục với file này -->
+    <source src="iloveyou3000.mp3" type="audio/mpeg" />
+  </audio>
+
   <div id="stage"></div>
+
   <template id="heartTpl">
     <div class="heart" aria-hidden="true">
       <svg viewBox="0 0 32 29" width="32" height="32">
@@ -47,20 +75,24 @@
       </svg>
     </div>
   </template>
+
   <script>
     const stage = document.getElementById('stage');
     const tpl = document.getElementById('heartTpl');
 
-    function rand(min, max){ return Math.random() * (max - min) + min; }
+    // Pastel palette for hearts
+    const COLORS = ['#ff9bb3','#ffb6c1','#ffc0cb','#ffd1dc','#fdb7ff','#c7b9ff','#a0e7e5','#b4f8c8','#fbe7c6','#ffe599'];
+    const LOVE_EMOJIS = ['💖','💕','🌸','✨','⭐']; // đơn giản, dễ nhìn
 
+    function rand(min, max){ return Math.random() * (max - min) + min; }
+    function pick(arr){ return arr[Math.floor(rand(0, arr.length))]; }
+
+    // ===== Auto floating hearts =====
     function createHeart(x, y){
       const node = tpl.content.firstElementChild.cloneNode(true);
       const size = rand(16, 40);
       node.style.width = node.style.height = size + 'px';
-      const hue = rand(330, 380) % 360;
-      const sat = rand(70, 95);
-      const light = rand(55, 75);
-      node.style.color = `hsl(${hue} ${sat}% ${light}%)`;
+      node.style.color = pick(COLORS);
 
       const sway = rand(30, 120);
       const drift = rand(-sway, sway);
@@ -88,7 +120,7 @@
     }
 
     function loop(t){
-      const freq = 200;
+      const freq = 220; // nhẹ hơn chút cho dễ nhìn
       if(!window.lastSpawn || t - window.lastSpawn > freq){
         window.lastSpawn = t;
         const x = rand(0, window.innerWidth);
@@ -99,7 +131,58 @@
     }
     requestAnimationFrame(loop);
 
-    // Counter logic
+    // ===== Click burst: chỉ icon dễ nhìn =====
+    function createEmoji(x, y){
+      const el = document.createElement('div');
+      el.className = 'love';
+      el.textContent = pick(LOVE_EMOJIS);
+      const size = rand(22, 36);
+      el.style.fontSize = size + 'px';
+
+      const duration = rand(0.9, 1.6);
+      const start = performance.now();
+      const angle = rand(-Math.PI/2 - 0.7, -Math.PI/2 + 0.7);
+      const speed = rand(220, 420);
+      const gravity = 620;
+      const spin = rand(-40, 40);
+      const vx = Math.cos(angle) * speed;
+      const vy = Math.sin(angle) * speed;
+
+      function frame(t){
+        const k = (t - start) / 1000;
+        if(k >= duration){ el.remove(); return; }
+        const dx = vx * k;
+        const dy = vy * k + 0.5 * gravity * k * k;
+        el.style.transform = `translate(${x + dx}px, ${y + dy}px) rotate(${spin * k}deg)`;
+        el.style.opacity = 1 - (k / duration);
+        requestAnimationFrame(frame);
+      }
+      el.style.left = '0';
+      el.style.top = '0';
+      stage.appendChild(el);
+      requestAnimationFrame(frame);
+    }
+
+    function burstAt(x, y, count = 14){
+      for(let i=0;i<count;i++){
+        const jitterX = rand(-25, 25);
+        const jitterY = rand(-15, 15);
+        // 70% emoji, 30% heart pastel
+        if(Math.random() < 0.7) createEmoji(x + jitterX, y + jitterY);
+        else createHeart(x + jitterX, y + jitterY);
+      }
+    }
+
+    let holding = false, holdTimer;
+    window.addEventListener('pointerdown', (e)=>{
+      holding = true;
+      burstAt(e.clientX, e.clientY, 16);
+      clearInterval(holdTimer);
+      holdTimer = setInterval(()=>{ if(holding) burstAt(e.clientX, e.clientY, 10); }, 180);
+    });
+    window.addEventListener('pointerup', ()=>{ holding = false; clearInterval(holdTimer); });
+
+    // ===== Day counter =====
     const counterEl = document.getElementById('dayCounter');
     const startDate = new Date('2025-03-20T00:00:00');
     function updateCounter(){
@@ -110,6 +193,41 @@
     }
     updateCounter();
     setInterval(updateCounter, 1000 * 60 * 60);
+
+    // ===== Music: I Love You 3000 (autoplay + loop) =====
+    const audio = document.getElementById('bgm');
+    const musicBtn = document.getElementById('musicBtn');
+
+    async function tryPlayAutoplay(){
+      try{
+        await audio.play();
+        musicBtn.textContent = '🎵 Đang phát';
+        musicBtn.setAttribute('aria-pressed','true');
+        musicBtn.classList.remove('pulse');
+      }catch(e){
+        // Trình duyệt chặn autoplay: chờ 1 tương tác người dùng
+        musicBtn.textContent = '🎵 Bật nhạc';
+        musicBtn.classList.add('pulse');
+        const kick = ()=>{ audio.play().then(()=>{ musicBtn.textContent='🎵 Đang phát'; musicBtn.classList.remove('pulse'); window.removeEventListener('pointerdown', kick); }); };
+        window.addEventListener('pointerdown', kick, { once: true });
+      }
+    }
+
+    musicBtn.addEventListener('click', async ()=>{
+      if(audio.paused){
+        await audio.play();
+        musicBtn.textContent = '🎵 Đang phát';
+        musicBtn.setAttribute('aria-pressed','true');
+        musicBtn.classList.remove('pulse');
+      }else{
+        audio.pause();
+        musicBtn.textContent = '🎵 Bật nhạc';
+        musicBtn.setAttribute('aria-pressed','false');
+      }
+    });
+
+    // Thử autoplay khi tải trang
+    document.addEventListener('DOMContentLoaded', tryPlayAutoplay);
   </script>
 </body>
 </html>
