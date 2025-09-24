@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Simple love</title>
+  <title>Hearts Fly Effect — Pastel Text</title>
   <style>
     body{
       margin:0;
@@ -20,10 +20,35 @@
     .center-text{
       position: relative;
       z-index: 10;
-      font-size: 2rem;
-      font-weight: 600;
-      color: #222;
+      font-size: 2.5rem;
+      font-weight: 700;
       text-align: center;
+      color: #ffb6c1; /* pastel pink */
+      text-shadow: 0 0 8px rgba(255,182,193,0.6), 0 0 15px rgba(255,105,180,0.4);
+      animation: heartbeat 2s infinite ease-in-out, glow 3s infinite alternate;
+    }
+    @keyframes heartbeat {
+      0%, 100% { transform: scale(1); }
+      25% { transform: scale(1.05); }
+      50% { transform: scale(0.97); }
+      75% { transform: scale(1.03); }
+    }
+    @keyframes glow {
+      from { text-shadow: 0 0 8px rgba(255,182,193,0.6), 0 0 15px rgba(255,105,180,0.4); }
+      to { text-shadow: 0 0 12px rgba(255,182,193,0.9), 0 0 22px rgba(255,105,180,0.6); }
+    }
+    .sparkle{
+      position:absolute;
+      width:6px; height:6px;
+      background: radial-gradient(circle, #fff 0%, transparent 70%);
+      border-radius:50%;
+      animation: sparkleAnim 2s linear infinite;
+      opacity:0.8;
+    }
+    @keyframes sparkleAnim{
+      0%{transform:scale(0) translateY(0); opacity:0;}
+      50%{transform:scale(1) translateY(-20px); opacity:1;}
+      100%{transform:scale(0) translateY(-40px); opacity:0;}
     }
   </style>
 </head>
@@ -40,6 +65,7 @@
   <script>
     const stage = document.getElementById('stage');
     const tpl = document.getElementById('heartTpl');
+    const centerText = document.querySelector('.center-text');
 
     function rand(min, max){ return Math.random() * (max - min) + min; }
 
@@ -88,6 +114,18 @@
       requestAnimationFrame(loop);
     }
     requestAnimationFrame(loop);
+
+    // Sparkles around text
+    function createSparkle(){
+      const s = document.createElement('div');
+      s.className = 'sparkle';
+      const rect = centerText.getBoundingClientRect();
+      s.style.left = rect.left + rect.width/2 + rand(-60,60) + 'px';
+      s.style.top = rect.top + rect.height/2 + rand(-30,30) + 'px';
+      document.body.appendChild(s);
+      setTimeout(()=> s.remove(),2000);
+    }
+    setInterval(createSparkle, 400);
   </script>
 </body>
 </html>
