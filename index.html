@@ -3,19 +3,21 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>in Love</title>
+  <title>In Love</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Pacifico&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Special+Elite&display=swap');
 
     body{
       margin:0;
       background:#fff;
       overflow:hidden;
-      font-family: 'Pacifico', cursive;
+      font-family: 'Special Elite', monospace;
       display:flex;
+      flex-direction:column;
       align-items:center;
       justify-content:center;
       height:100vh;
+      gap: 12px;
     }
     .heart{position: fixed; left:0; top:0; transform: translate(-50%, -50%); pointer-events: none; will-change: transform, opacity;}
     .heart svg{display:block; filter: drop-shadow(0 2px 6px rgba(0,0,0,.25));}
@@ -25,12 +27,20 @@
       font-size: 2.5rem;
       font-weight: 400;
       text-align: center;
-      color: #e75480; /* hồng dễ nhìn */
+      color: #e75480;
+    }
+    .counter{
+      position: relative;
+      z-index: 10;
+      font-size: 1.5rem;
+      font-weight: 400;
+      color: #e75480;
     }
   </style>
 </head>
 <body>
   <div class="center-text">Hữu Hưng 💖 Thúy Bình</div>
+  <div class="counter" id="dayCounter">Đã bên nhau 0 ngày</div>
   <div id="stage"></div>
   <template id="heartTpl">
     <div class="heart" aria-hidden="true">
@@ -90,6 +100,18 @@
       requestAnimationFrame(loop);
     }
     requestAnimationFrame(loop);
+
+    // Counter logic
+    const counterEl = document.getElementById('dayCounter');
+    const startDate = new Date('2025-03-20T00:00:00');
+    function updateCounter(){
+      const now = new Date();
+      const diff = now - startDate;
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      counterEl.textContent = `Đã bên nhau ${days} ngày`;
+    }
+    updateCounter();
+    setInterval(updateCounter, 1000 * 60 * 60);
   </script>
 </body>
 </html>
