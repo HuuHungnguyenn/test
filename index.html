@@ -19,9 +19,9 @@
     .center-text{ font-size:2.5rem; font-weight:500; }
     .counter{ font-size:1.5rem; font-weight:400; }
 
-    .heart, .love{ position: fixed; left:0; top:0; transform: translate(-50%, -50%); pointer-events:none; will-change: transform, opacity; z-index: 5; }
+    .heart, .icon-burst{ position: fixed; left:0; top:0; transform: translate(-50%, -50%); pointer-events:none; will-change: transform, opacity; z-index: 5; }
     .heart svg{ display:block; filter: drop-shadow(0 2px 6px rgba(0,0,0,.2)); }
-    .love{ font-size:28px; }
+    .icon-burst{ font-size:32px; }
 
     .music-btn{
       position: fixed; right:14px; top:14px; z-index: 30;
@@ -57,19 +57,14 @@
     const stage = document.getElementById('stage');
     const tpl = document.getElementById('heartTpl');
 
-    const LOVE_EMOJIS = ['🦊','🐰','🌸','✨','⭐'];
-
     function rand(min, max){ return Math.random() * (max - min) + min; }
-    function pick(arr){ return arr[Math.floor(rand(0, arr.length))]; }
 
-    function createHeart(x, y){
+    // ===== Auto floating hearts =====
+    function createHeart(x, y, color){
       const node = tpl.content.firstElementChild.cloneNode(true);
       const size = rand(16, 40);
       node.style.width = node.style.height = size + 'px';
-      const hue = (rand(330, 380)) % 360;
-      const sat = rand(70, 95);
-      const light = rand(55, 75);
-      node.style.color = `hsl(${hue} ${sat}% ${light}%)`;
+      node.style.color = color || `hsl(${(rand(330, 380)) % 360} ${rand(70,95)}% ${rand(55,75)}%)`;
 
       const sway = rand(30, 120);
       const drift = rand(-sway, sway);
@@ -107,11 +102,14 @@
     }
     requestAnimationFrame(loop);
 
-    function createEmoji(x, y){
+    // ===== Click burst with fox & rabbit icons =====
+    const ICONS = ['🦊','🐰','🌸','🌟','☁️'];
+
+    function createIcon(x, y){
       const el = document.createElement('div');
-      el.className = 'love';
-      el.textContent = pick(LOVE_EMOJIS);
-      el.style.fontSize = rand(22, 36) + 'px';
+      el.className = 'icon-burst';
+      el.textContent = ICONS[Math.floor(Math.random() * ICONS.length)];
+      el.style.fontSize = rand(28, 42) + 'px';
 
       const duration = rand(0.9, 1.6);
       const start = performance.now();
@@ -136,23 +134,23 @@
       requestAnimationFrame(frame);
     }
 
-    function burstAt(x, y, count = 14){
+    function burstAt(x, y, count = 12){
       for(let i=0;i<count;i++){
         const jitterX = rand(-25, 25);
         const jitterY = rand(-15, 15);
-        if(Math.random() < 0.7) createEmoji(x + jitterX, y + jitterY);
-        else createHeart(x + jitterX, y + jitterY);
+        createIcon(x + jitterX, y + jitterY);
       }
     }
 
     let holding = false, holdTimer;
     window.addEventListener('pointerdown', (e)=>{
-      holding = true; burstAt(e.clientX, e.clientY, 16);
+      holding = true; burstAt(e.clientX, e.clientY, 12);
       clearInterval(holdTimer);
-      holdTimer = setInterval(()=>{ if(holding) burstAt(e.clientX, e.clientY, 10); }, 180);
+      holdTimer = setInterval(()=>{ if(holding) burstAt(e.clientX, e.clientY, 8); }, 200);
     });
     window.addEventListener('pointerup', ()=>{ holding = false; clearInterval(holdTimer); });
 
+    // ===== Day counter =====
     const counterEl = document.getElementById('dayCounter');
     const startDate = new Date('2025-03-20T00:00:00');
     function updateCounter(){
