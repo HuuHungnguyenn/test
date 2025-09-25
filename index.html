@@ -29,9 +29,10 @@
     @keyframes sway{ 0%{ transform: translateX(0);} 25%{ transform: translateX(var(--amp,40px)); } 50%{ transform: translateX(0);} 75%{ transform: translateX(calc(var(--amp,40px) * -1)); } 100%{ transform: translateX(0);} }
 
     /* MUSIC PLAYER */
-    .player{ position: fixed; top: 12px; right: 12px; z-index: 5; background:#fff; border:1px solid #eee; box-shadow:0 10px 24px rgba(0,0,0,.08); border-radius:12px; padding:10px 14px; text-align:center; min-width:200px; }
+    .player{ position: fixed; top: 12px; right: 12px; z-index: 5; background:#fff; border:1px solid #eee; box-shadow:0 10px 24px rgba(0,0,0,.08); border-radius:12px; padding:10px 14px; text-align:center; min-width:220px; }
     .player .title{ font-size:14px; font-weight:600; color:#444; margin-bottom:6px; }
     .player .progress{ width:100%; }
+    .player .time{ margin-top:6px; font-size:12px; color:#666; display:flex; justify-content:space-between; }
     .player .controls{ margin-top:6px; display:flex; justify-content:center; gap:10px; }
     .player button{ appearance:none; border:0; background:transparent; cursor:pointer; font-size:18px; line-height:1; padding:4px; border-radius:8px; }
     .player button:hover{ background:#f7f7f7; }
@@ -41,6 +42,7 @@
   <div class="player" aria-label="music player">
     <div class="title" id="songTitle">—</div>
     <input id="progress" class="progress" type="range" min="0" max="100" step="1" value="0" />
+    <div class="time"><span id="elapsed">0:00</span><span id="remaining">-0:00</span></div>
     <div class="controls">
       <button id="prev" title="Bài trước">⏮️</button>
       <button id="play" title="Phát/Tạm dừng">▶️</button>
@@ -89,8 +91,8 @@
 
     /* MUSIC PLAYER */
     const songs = [
-      { title: 'Mirrors', file: 'Mirrors.mp3' },
       { title: 'I Love You 3000', file: 'iloveyou3000.mp3' },
+      { title: 'Mirrors', file: 'Mirrors.mp3' },
       { title: 'Young And Beautiful', file: 'youngandbeautiful.mp3' },
     ];
     let i = 0;
@@ -100,11 +102,14 @@
     const nextBtn = document.getElementById('next');
     const titleEl = document.getElementById('songTitle');
     const progress = document.getElementById('progress');
+    const elapsed = document.getElementById('elapsed');
+    const remaining = document.getElementById('remaining');
+
+    function fmt(t){ if(!isFinite(t)|| t<0) t=0; const m=Math.floor(t/60); const s=Math.floor(t%60); return `${m}:${String(s).padStart(2,'0')}`; }
 
     function loadSong(idx){
       const s=songs[idx];
-      audio.src=s.file;
-      titleEl.textContent=s.title;
+      audio.src=s.file; titleEl.textContent=s.title; progress.value=0; elapsed.textContent='0:00'; remaining.textContent='-0:00';
     }
 
     function play(){ audio.play(); playBtn.textContent='⏸️'; }
@@ -115,10 +120,18 @@
     nextBtn.addEventListener('click', ()=>{ i=(i+1)%songs.length; loadSong(i); play(); });
     audio.addEventListener('ended', ()=> nextBtn.click());
 
-    // progress bar update
+    // cập nhật thanh thời gian + bộ đếm
+    audio.addEventListener('loadedmetadata', ()=>{
+      progress.value = 0;
+      elapsed.textContent='0:00';
+      remaining.textContent = `-${fmt(audio.duration)}`;
+    });
     audio.addEventListener('timeupdate', ()=>{
       if (!isNaN(audio.duration)){
-        progress.value=(audio.currentTime/audio.duration*100)||0;
+        const cur = audio.currentTime; const dur = audio.duration;
+        progress.value = (cur/dur*100)||0;
+        elapsed.textContent = fmt(cur);
+        remaining.textContent = `-${fmt(Math.max(dur-cur,0))}`;
       }
     });
     progress.addEventListener('input', ()=>{
