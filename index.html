@@ -39,9 +39,8 @@
   <div class="center-text" id="mainText">Hữu Hưng ❤️ Thuý Bình</div>
   <div class="counter" id="dayCounter">Đã bên nhau 0 ngày</div>
 
-  <audio id="bgm" preload="auto">
-    <source src="iloveyou3000.mp3" type="audio/mpeg" />
-  </audio>
+  <!-- Audio sẽ được set src bằng playlist.json -->
+  <audio id="bgm" preload="auto"></audio>
 
   <div id="stage"></div>
 
@@ -102,8 +101,8 @@
     }
     requestAnimationFrame(loop);
 
-    // ===== Click burst with fox & rabbit icons =====
-    const ICONS = ['🦊','🐰','🌸','🌟','☁️'];
+    // ===== Click burst icons =====
+    const ICONS = ['🦊','🐰','☁️','🌟'🌸];
 
     function createIcon(x, y){
       const el = document.createElement('div');
@@ -167,22 +166,56 @@
     updateCounter();
     setInterval(updateCounter, 1000);
 
-    // ===== Music =====
+    // ===== Music: click bất kỳ để phát + playlist.json =====
     const audio = document.getElementById('bgm');
     const musicBtn = document.getElementById('musicBtn');
 
+    let playlist = [];
+    let currentIndex = 0;
+    let kicked = false;
+
+    async function loadPlaylist(){
+      try{
+        const res = await fetch('playlist.json', { cache: 'no-store' });
+        if(res.ok){
+          const data = await res.json();
+          if(Array.isArray(data) && data.length){ playlist = data; }
+        }
+      }catch(e){ /* ignore, fallback below */ }
+      if(playlist.length === 0){ playlist = ['iloveyou3000.mp3']; }
+      audio.src = playlist[0];
+    }
+
+    function nextTrack(){
+      if(!playlist.length) return;
+      currentIndex = (currentIndex + 1) % playlist.length;
+      audio.src = playlist[currentIndex];
+      audio.play().catch(()=>{});
+    }
+
+    // Click bất kỳ để phát nhạc lần đầu
+    const firstKick = async () => {
+      if(kicked) return; kicked = true;
+      try { await audio.play(); musicBtn.textContent = '🎵 Đang phát'; musicBtn.setAttribute('aria-pressed','true'); musicBtn.classList.remove('pulse'); }
+      catch(e) { kicked = false; }
+      window.removeEventListener('pointerdown', firstKick);
+      window.removeEventListener('keydown', firstKick);
+      window.removeEventListener('touchstart', firstKick);
+    };
+
     musicBtn.addEventListener('click', async ()=>{
-      if(audio.paused){
-        await audio.play();
-        musicBtn.textContent = '🎵 Đang phát';
-        musicBtn.setAttribute('aria-pressed','true');
-        musicBtn.classList.remove('pulse');
-      } else {
-        audio.pause();
-        musicBtn.textContent = '🎵 Bật nhạc';
-        musicBtn.setAttribute('aria-pressed','false');
-      }
+      if(audio.paused){ await firstKick(); }
+      else{ audio.pause(); musicBtn.textContent = '🎵 Bật nhạc'; musicBtn.setAttribute('aria-pressed','false'); }
     });
+
+    audio.addEventListener('ended', nextTrack);
+
+    window.addEventListener('pointerdown', firstKick, { once:true });
+    window.addEventListener('keydown', firstKick, { once:true });
+    window.addEventListener('touchstart', firstKick, { once:true });
+
+    // Load danh sách bài khi mở trang
+    loadPlaylist();
   </script>
 </body>
 </html>
