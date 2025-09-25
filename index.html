@@ -58,14 +58,11 @@
   const musicBtn = document.getElementById('musicBtn');
   const musicTitleEl = document.getElementById('musicTitle');
 
-  // ===== Playlist hardcode =====
-  const PLAYLIST = [
-    'Mirrors.mp3',
-    'iloveyou3000.mp3',
-    'youngandbeautiful.mp3'
-  ];
+  // ===== Playlist via playlist.json =====
+  let playlist = [];
   let currentIndex = 0;
   let kicked = false;
+  let playlistLoaded = false;
 
   function niceTitle(src){
     try{
@@ -75,35 +72,47 @@
     }catch{ return src; }
   }
 
-  function primeFirstTrack(){
-    if(!PLAYLIST.length) return;
-    const firstSrc = new URL(PLAYLIST[currentIndex], window.location.href).href;
+  async function loadPlaylist(){
+    if(playlistLoaded) return;
+    try{
+      const res = await fetch('playlist.json', { cache: 'no-store' });
+      if(res.ok){
+        const data = await res.json();
+        if(Array.isArray(data) && data.length) playlist = data;
+      }
+    }catch(e){ /* ignore */ }
+    if(!playlist.length) playlist = ['iloveyou3000.mp3'];
+    currentIndex = 0;
     audio.preload = 'auto';
-    audio.src = firstSrc;
-    musicTitleEl.textContent = niceTitle(firstSrc);
+    audio.src = playlist[currentIndex];
+    musicTitleEl.textContent = niceTitle(playlist[currentIndex]);
     try{ audio.load(); }catch(_){}
+    playlistLoaded = true;
   }
 
   function nextTrack(){
-    if(!PLAYLIST.length) return;
-    currentIndex = (currentIndex + 1) % PLAYLIST.length;
-    audio.src = PLAYLIST[currentIndex];
-    musicTitleEl.textContent = niceTitle(PLAYLIST[currentIndex]);
+    if(!playlist.length) return;
+    currentIndex = (currentIndex + 1) % playlist.length;
+    audio.src = playlist[currentIndex];
+    musicTitleEl.textContent = niceTitle(playlist[currentIndex]);
+    musicTitleEl.hidden = false;
     audio.play().catch(()=>{});
   }
   audio.addEventListener('ended', nextTrack);
 
-  // First user interaction → play ASAP
+  // First user interaction → play
   const firstKick = async ()=>{
     if(kicked) return; kicked = true;
+    if(!playlistLoaded) await loadPlaylist();
     try{
-      audio.muted = false; 
+      audio.muted = false;
       await audio.play();
       musicBtn.textContent = '🎵 Đang phát';
       musicBtn.setAttribute('aria-pressed','true');
+      musicTitleEl.textContent = niceTitle(audio.src || playlist[currentIndex] || '');
       musicTitleEl.hidden = false;
     }catch(e){
-      // fallback: reset src rồi play lại 1 lần
+      // fallback reset src
       try{ const s = audio.src; audio.src = s; audio.load(); await audio.play(); musicBtn.textContent='🎵 Đang phát'; musicBtn.setAttribute('aria-pressed','true'); musicTitleEl.hidden=false; }catch(_){ kicked=false; }
     }
     window.removeEventListener('pointerdown', firstKick);
@@ -112,6 +121,7 @@
   };
 
   musicBtn.addEventListener('click', async ()=>{
+    if(!playlistLoaded) await loadPlaylist();
     if(audio.paused){ await firstKick(); }
     else{ audio.pause(); musicBtn.textContent = '🎵 Bật nhạc'; musicBtn.setAttribute('aria-pressed','false'); }
   });
@@ -226,8 +236,8 @@
   updateCounter();
   setInterval(updateCounter, 1000);
 
-  // Prime audio on load so click phát nhanh
-  document.addEventListener('DOMContentLoaded', primeFirstTrack);
+  // Load playlist
+  document.addEventListener('DOMContentLoaded', loadPlaylist);
   </script>
 </body>
 </html>
