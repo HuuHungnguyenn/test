@@ -19,66 +19,47 @@
       -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
     }
     main{ text-align:center; padding:24px; position:relative; z-index:2; }
-    .title{
-      color: var(--pink);
-      font-weight:700;
-      font-size: clamp(28px, 7.5vw, 56px);
-      letter-spacing:.2px;
-    }
-    .counter{
-      margin-top:12px;
-      color: var(--pink);
-      font-weight:600;
-      font-size: clamp(14px, 4vw, 22px);
-    }
+    .title{ color: var(--pink); font-weight:700; font-size: clamp(28px, 7.5vw, 56px); letter-spacing:.2px; }
+    .counter{ margin-top:12px; color: var(--pink); font-weight:600; font-size: clamp(14px, 4vw, 22px); }
 
-    /* Wrapper + SVG tách animation để mượt, không khựng */
-    .heart{ /* wrapper */
-      position:absolute;
-      bottom:-60px;
-      pointer-events:none;
-      left:50vw;
-      animation: sway var(--dur,8s) ease-in-out infinite;
-      will-change: transform;
-    }
-    .heart-svg{ /* svg bên trong */
-      width: var(--size,44px); /* tim to hơn, có thể chỉnh qua --size */
-      height: auto; /* giữ đúng tỷ lệ, không bị vuông */
-      filter: drop-shadow(0 6px 10px rgba(0,0,0,.1));
-      opacity: var(--op,.9);
-      animation: floatUp var(--dur,8s) linear forwards;
-      will-change: transform, opacity;
-      display:block;
-    }
+    /* HEARTS */
+    .heart{ position:absolute; bottom:-60px; pointer-events:none; left:50vw; animation: sway var(--dur,8s) ease-in-out infinite; will-change: transform; }
+    .heart-svg{ width: 48px; height: 48px; filter: drop-shadow(0 6px 10px rgba(0,0,0,.1)); opacity: var(--op,.9); animation: floatUp var(--dur,8s) linear forwards; will-change: transform, opacity; display:block; }
+    @keyframes floatUp{ 0%{ transform: translateY(0) rotate(var(--rot,0deg)) scale(1); opacity:var(--op,.9);} 70%{ opacity:1; } 100%{ transform: translateY(-130vh) rotate(var(--rot,0deg)) scale(1.08); opacity:0;} }
+    @keyframes sway{ 0%{ transform: translateX(0);} 25%{ transform: translateX(var(--amp,40px)); } 50%{ transform: translateX(0);} 75%{ transform: translateX(calc(var(--amp,40px) * -1)); } 100%{ transform: translateX(0);} }
 
-    @keyframes floatUp{
-      0%{ transform: translateY(0) rotate(var(--rot,0deg)) scale(1); opacity:var(--op,.9);} 
-      70%{ opacity:1; }
-      100%{ transform: translateY(-130vh) rotate(var(--rot,0deg)) scale(1.08); opacity:0;}
-    }
-    @keyframes sway{
-      0%  { transform: translateX(0); }
-      25% { transform: translateX(var(--amp,40px)); }
-      50% { transform: translateX(0); }
-      75% { transform: translateX(calc(var(--amp,40px) * -1)); }
-      100%{ transform: translateX(0); }
-    }
+    /* MUSIC PLAYER (top-right) */
+    .player{ position: fixed; top: 12px; right: 12px; z-index: 5; background:#fff; border:1px solid #eee; box-shadow:0 10px 24px rgba(0,0,0,.08); border-radius:999px; display:flex; align-items:center; gap:8px; padding:8px 12px; }
+    .player button{ appearance:none; border:0; background:transparent; cursor:pointer; font-size:16px; line-height:1; padding:6px; border-radius:10px; }
+    .player button:hover{ background:#f7f7f7; }
+    .player .title{ font-size:14px; font-weight:600; color:#444; }
+    .player input[type="range"]{ accent-color: var(--pink); width:110px; height:4px; }
+
+    @media (max-width: 480px){ .player .title{ display:none;} .player input[type="range"]{ width:80px; } }
   </style>
 </head>
 <body>
+  <div class="player" aria-label="music player">
+    <button id="prev" title="Bài trước">⏮️</button>
+    <button id="play" title="Phát/Tạm dừng">▶️</button>
+    <button id="next" title="Bài tiếp">⏭️</button>
+    <div class="title" id="songTitle">—</div>
+    <input id="vol" type="range" min="0" max="1" step="0.01" title="Âm lượng" />
+    <audio id="audio" preload="auto"></audio>
+  </div>
+
   <main>
     <div class="title">Hữu Hưng ❤️ Thúy Bình</div>
     <div class="counter" id="counter">We were together —</div>
   </main>
 
   <script>
+    /* COUNTER */
     const START = new Date('2025-03-20T00:00:00');
     const $counter = document.getElementById('counter');
-
     function pad(n){ return String(n).padStart(2,'0'); }
     function tick(){
-      const now = new Date();
-      let diff = now - START;
+      const now = new Date(); let diff = now - START;
       const sec=1000, min=60*sec, hour=60*min, day=24*hour;
       const days=Math.floor(diff/day); diff%=day;
       const hours=Math.floor(diff/hour); diff%=hour;
@@ -88,48 +69,39 @@
     }
     tick(); setInterval(tick,1000);
 
+    /* HEARTS */
     const COLORS=['#ff9aa2','#ffb3ba','#ffc2d1','#ffd1dc','#ffadc6','#ff8fab','#f48fb1','#f6a6d1','#ffa3a3','#ff8ea1'];
-
     function createHeart(){
-      const wrap=document.createElement('div');
-      wrap.className='heart';
-
+      const wrap=document.createElement('div'); wrap.className='heart';
       const svgNS='http://www.w3.org/2000/svg';
-      const svg=document.createElementNS(svgNS,'svg');
-      svg.setAttribute('viewBox','0 0 32 29'); // đúng tỉ lệ tim, tránh bị vuông
-      svg.classList.add('heart-svg');
-      svg.style.setProperty('--size','48px'); // to hơn nữa nếu muốn
-
+      const svg=document.createElementNS(svgNS,'svg'); svg.setAttribute('viewBox','0 0 32 29'); svg.classList.add('heart-svg');
       const path=document.createElementNS(svgNS,'path');
-      // Rounded Heart Shape (khe nông, đáy bo mềm)
       path.setAttribute('d','M16 30 C 8 23, 3 15, 8 9 C 11 6, 16 8, 16 11 C 16 8, 21 6, 24 9 C 29 15, 24 23, 16 30 Z');
       const base=COLORS[Math.random()*COLORS.length|0];
-      path.setAttribute('fill', base);
-      path.setAttribute('stroke','rgba(255,255,255,.55)');
-      path.setAttribute('stroke-width','0.6');
-      path.setAttribute('shape-rendering','geometricPrecision');
+      path.setAttribute('fill', base); path.setAttribute('stroke','rgba(255,255,255,.55)'); path.setAttribute('stroke-width','0.6'); path.setAttribute('shape-rendering','geometricPrecision');
       svg.appendChild(path);
-
-      // tham số random mượt mà hơn
-      const left=Math.random()*100;
-      const rot=(Math.random()*26 - 13).toFixed(1); // xoay vừa phải
-      const dur=(Math.random()*4 + 7).toFixed(2)+'s';
-      const op=(Math.random()*0.25 + 0.75).toFixed(2);
-      const amp=(Math.random()*80 - 40).toFixed(0)+'px';
-
-      wrap.style.left=left+'vw';
-      wrap.style.setProperty('--dur', dur);
-      wrap.style.setProperty('--amp', amp);
-      svg.style.setProperty('--rot', rot+'deg');
-      svg.style.setProperty('--op', op);
-
-      wrap.appendChild(svg);
-      document.body.appendChild(wrap);
-      setTimeout(()=>wrap.remove(),13000);
+      const left=Math.random()*100, rot=(Math.random()*26 - 13).toFixed(1), dur=(Math.random()*4 + 7).toFixed(2)+'s', op=(Math.random()*0.25 + 0.75).toFixed(2), amp=(Math.random()*80 - 40).toFixed(0)+'px';
+      wrap.style.left=left+'vw'; wrap.style.setProperty('--dur', dur); wrap.style.setProperty('--amp', amp); svg.style.setProperty('--rot', rot+'deg'); svg.style.setProperty('--op', op);
+      wrap.appendChild(svg); document.body.appendChild(wrap); setTimeout(()=>wrap.remove(),13000);
     }
+    const seed=36; for(let i=0;i<seed;i++){ setTimeout(createHeart, i*100); } setInterval(createHeart,420);
 
-    const seed=36;for(let i=0;i<seed;i++){setTimeout(createHeart,i*100);} 
-    setInterval(createHeart,420);
+    /* MUSIC PLAYER */
+    const songs = [
+      { title: 'Mirrors', file: 'Mirrors.mp3' },
+      { title: 'I Love You 3000', file: 'iloveyou3000.mp3' },
+      { title: 'Young And Beautiful', file: 'youngandbeautiful.mp3' },
+    ];
+    let i = 0; const audio = document.getElementById('audio'); const playBtn = document.getElementById('play'); const prevBtn = document.getElementById('prev'); const nextBtn = document.getElementById('next'); const titleEl = document.getElementById('songTitle'); const vol = document.getElementById('vol');
+    function loadSong(idx){ const s=songs[idx]; audio.src=s.file; titleEl.textContent=s.title; }
+    function play(){ audio.play(); playBtn.textContent='⏸️'; }
+    function pause(){ audio.pause(); playBtn.textContent='▶️'; }
+    playBtn.addEventListener('click', ()=> audio.paused ? play() : pause());
+    prevBtn.addEventListener('click', ()=>{ i=(i-1+songs.length)%songs.length; loadSong(i); play(); });
+    nextBtn.addEventListener('click', ()=>{ i=(i+1)%songs.length; loadSong(i); play(); });
+    audio.addEventListener('ended', ()=> nextBtn.click());
+    vol.value=0.8; audio.volume=0.8; vol.addEventListener('input', ()=> audio.volume=+vol.value);
+    loadSong(i);
   </script>
 </body>
 </html>
