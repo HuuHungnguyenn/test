@@ -4,6 +4,9 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>In Love 💖</title>
+  <!-- Favicon trái tim -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><text y='50' font-size='52'>💖</text></svg>">
+
   <style>
     :root{ --pink:#e75480; }
     body{
@@ -12,17 +15,14 @@
       display:flex; flex-direction:column; align-items:center; justify-content:center;
       height:100vh; gap:12px; cursor: crosshair;
     }
-    /* Ensure center text always on top */
     .center-text, .counter{ position: relative; z-index: 20; user-select:none; color: var(--pink); text-align:center; }
     .center-text{ font-size:2.5rem; font-weight:500; }
     .counter{ font-size:1.5rem; font-weight:400; }
 
-    /* Particles */
     .heart, .love{ position: fixed; left:0; top:0; transform: translate(-50%, -50%); pointer-events:none; will-change: transform, opacity; z-index: 5; }
     .heart svg{ display:block; filter: drop-shadow(0 2px 6px rgba(0,0,0,.2)); }
     .love{ font-size:28px; }
 
-    /* Music button */
     .music-btn{
       position: fixed; right:14px; top:14px; z-index: 30;
       background:#fff; color:#111; border:1px solid rgba(0,0,0,.1);
@@ -39,8 +39,7 @@
   <div class="center-text" id="mainText">Hữu Hưng 💖 Thúy Bình</div>
   <div class="counter" id="dayCounter">Đã bên nhau 0 ngày</div>
 
-  <audio id="bgm" autoplay loop preload="auto">
-    <!-- Đặt file 'iloveyou3000.mp3' cùng thư mục với file này -->
+  <audio id="bgm" autoplay preload="auto">
     <source src="iloveyou3000.mp3" type="audio/mpeg" />
   </audio>
 
@@ -58,18 +57,16 @@
     const stage = document.getElementById('stage');
     const tpl = document.getElementById('heartTpl');
 
-    const LOVE_EMOJIS = ['💖','💕','🌸','✨','⭐']; // icon dễ nhìn
+    const LOVE_EMOJIS = ['🦊','🐰','🌸','✨','⭐'];
 
     function rand(min, max){ return Math.random() * (max - min) + min; }
     function pick(arr){ return arr[Math.floor(rand(0, arr.length))]; }
 
-    // ===== Auto floating hearts (original pink tones) =====
     function createHeart(x, y){
       const node = tpl.content.firstElementChild.cloneNode(true);
       const size = rand(16, 40);
       node.style.width = node.style.height = size + 'px';
-      // ORIGINAL style: random reddish/pink hues
-      const hue = (rand(330, 380)) % 360; // wrap around
+      const hue = (rand(330, 380)) % 360;
       const sat = rand(70, 95);
       const light = rand(55, 75);
       node.style.color = `hsl(${hue} ${sat}% ${light}%)`;
@@ -99,7 +96,7 @@
     }
 
     function loop(t){
-      const freq = 220; // nhẹ mắt
+      const freq = 220;
       if(!window.lastSpawn || t - window.lastSpawn > freq){
         window.lastSpawn = t;
         const x = rand(0, window.innerWidth);
@@ -110,7 +107,6 @@
     }
     requestAnimationFrame(loop);
 
-    // ===== Click burst =====
     function createEmoji(x, y){
       const el = document.createElement('div');
       el.className = 'love';
@@ -157,7 +153,6 @@
     });
     window.addEventListener('pointerup', ()=>{ holding = false; clearInterval(holdTimer); });
 
-    // ===== Day counter =====
     const counterEl = document.getElementById('dayCounter');
     const startDate = new Date('2025-03-20T00:00:00');
     function updateCounter(){
@@ -169,28 +164,29 @@
     updateCounter();
     setInterval(updateCounter, 1000 * 60 * 60);
 
-    // ===== Music =====
     const audio = document.getElementById('bgm');
     const musicBtn = document.getElementById('musicBtn');
 
-    async function tryPlayAutoplay(){
+    async function hardAutoplay(){
       try{
+        audio.muted = false;
+        audio.loop = true;
         await audio.play();
         musicBtn.textContent = '🎵 Đang phát';
         musicBtn.setAttribute('aria-pressed','true');
         musicBtn.classList.remove('pulse');
-      }catch(e){
+      }catch(err){
         musicBtn.textContent = '🎵 Bật nhạc';
         musicBtn.classList.add('pulse');
-        const kick = ()=>{ audio.play().then(()=>{ musicBtn.textContent='🎵 Đang phát'; musicBtn.classList.remove('pulse'); window.removeEventListener('pointerdown', kick); }); };
-        window.addEventListener('pointerdown', kick, { once: true });
       }
     }
+
     musicBtn.addEventListener('click', async ()=>{
-      if(audio.paused){ await audio.play(); musicBtn.textContent = '🎵 Đang phát'; musicBtn.setAttribute('aria-pressed','true'); musicBtn.classList.remove('pulse'); }
-      else{ audio.pause(); musicBtn.textContent = '🎵 Bật nhạc'; musicBtn.setAttribute('aria-pressed','false'); }
+      if(audio.paused){ await audio.play(); musicBtn.textContent='🎵 Đang phát'; musicBtn.setAttribute('aria-pressed','true'); musicBtn.classList.remove('pulse'); }
+      else{ audio.pause(); musicBtn.textContent='🎵 Bật nhạc'; musicBtn.setAttribute('aria-pressed','false'); }
     });
-    document.addEventListener('DOMContentLoaded', tryPlayAutoplay);
+
+    window.addEventListener('load', hardAutoplay);
   </script>
 </body>
 </html>
