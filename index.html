@@ -25,12 +25,19 @@
     .music-wrap{position: fixed; right:14px; top:14px; z-index:30; display:flex; flex-direction:column; align-items:flex-end; gap:6px}
     .music-btn{ background:#fff; color:#111; border:1px solid rgba(0,0,0,.1); border-radius:999px; padding:8px 12px; font-weight:600; font-size:14px; box-shadow:0 6px 20px rgba(0,0,0,.06); cursor:pointer; user-select:none; }
     .music-title{ background:rgba(255,230,238,.9); color:#d9487e; border:1px solid rgba(217,72,126,.18); padding:6px 10px; border-radius:999px; font-size:12px; font-weight:700; box-shadow:0 6px 18px rgba(217,72,126,.12); max-width:240px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
+    .music-controls{ display:flex; gap:6px; }
+    .mc-btn{ background:#fff; color:#111; border:1px solid rgba(0,0,0,.1); border-radius:999px; padding:6px 10px; font-weight:600; font-size:12px; box-shadow:0 4px 12px rgba(0,0,0,.06); cursor:pointer; }
   </style>
 </head>
 <body>
   <div class="music-wrap">
     <button class="music-btn" id="musicBtn" aria-pressed="false">🎵 Bật nhạc</button>
     <div class="music-title" id="musicTitle" aria-live="polite" hidden>(chưa phát)</div>
+    <div class="music-controls">
+      <button class="mc-btn" id="prevBtn" title="Bài trước">⏮️</button>
+      <button class="mc-btn" id="nextBtn" title="Bài tiếp">⏭️</button>
+    </div>
+  </div>
   </div>
 
   <div class="center-text" id="mainText">Hữu Hưng ❤️ Thuý Bình</div>
@@ -96,12 +103,19 @@
     });
   });
 
+  function prevTrack(){
+    if(!PLAYLIST.length) return;
+    currentIndex = (currentIndex - 1 + PLAYLIST.length) % PLAYLIST.length;
+    audio.src = PLAYLIST[currentIndex];
+    musicTitleEl.textContent = niceTitle(PLAYLIST[currentIndex]);
+    audio.play().then(()=>{ musicBtn.textContent='🎵 Đang phát'; musicBtn.setAttribute('aria-pressed','true'); musicTitleEl.hidden=false; }).catch(()=>{});
+  }
   function nextTrack(){
     if(!PLAYLIST.length) return;
     currentIndex = (currentIndex + 1) % PLAYLIST.length;
     audio.src = PLAYLIST[currentIndex];
     musicTitleEl.textContent = niceTitle(PLAYLIST[currentIndex]);
-    audio.play().catch(()=>{});
+    audio.play().then(()=>{ musicBtn.textContent='🎵 Đang phát'; musicBtn.setAttribute('aria-pressed','true'); musicTitleEl.hidden=false; }).catch(()=>{});
   }
   audio.addEventListener('ended', nextTrack);
 
@@ -115,9 +129,16 @@
     try{ const s = audio.src; audio.src = s; audio.load(); await audio.play(); return true; }catch(e){ return false; }
   }
 
+  const sleep = (ms)=>new Promise(r=>setTimeout(r,ms));
+  async function safePlayWithRetry(attempts = 2){
+    for(let i=0;i<attempts;i++){
+      try{ audio.muted = false; await audio.play(); return true; }catch(e){ await sleep(200*(i+1)); }
+    }
+    try{ const s = audio.src; audio.src = s; audio.load(); await audio.play(); return true; }catch(e){ return false; }
+  }
+
   const firstKick = async ()=>{
     if(kicked) return; kicked = true;
-    // nếu chưa gán bài đầu tiên vì lý do nào đó, gắn lại
     if(!audio.src) primeFirstTrack();
     const ok = await safePlayWithRetry(3);
     if(ok){
@@ -131,7 +152,18 @@
   };
 
   musicBtn.addEventListener('click', async ()=>{
-    if(audio.paused){ await firstKick(); }
+    if(audio.paused){
+      if(!kicked){ await firstKick(); return; }
+      const ok = await safePlayWithRetry(2);
+      if(ok){ musicBtn.textContent='🎵 Đang phát'; musicBtn.setAttribute('aria-pressed','true'); musicTitleEl.hidden=false; }
+    } else {
+      audio.pause();
+      musicBtn.textContent = '🎵 Bật nhạc';
+      musicBtn.setAttribute('aria-pressed','false');
+    }
+  });
+  document.getElementById('prevBtn').addEventListener('click', (e)=>{ e.stopPropagation(); prevTrack(); });
+  document.getElementById('nextBtn').addEventListener('click', (e)=>{ e.stopPropagation(); nextTrack(); }); }
     else{ audio.pause(); musicBtn.textContent = '🎵 Bật nhạc'; musicBtn.setAttribute('aria-pressed','false'); }
   });
 
