@@ -36,10 +36,10 @@
 <body>
   <button class="music-btn" id="musicBtn" aria-pressed="false">🎵 Bật nhạc</button>
 
-  <div class="center-text" id="mainText">Hữu Hưng 💖 Thúy Bình</div>
+  <div class="center-text" id="mainText">Hữu Hưng ❤️ Thuý Bình</div>
   <div class="counter" id="dayCounter">Đã bên nhau 0 ngày</div>
 
-  <audio id="bgm" autoplay preload="auto">
+  <audio id="bgm" preload="auto">
     <source src="iloveyou3000.mp3" type="audio/mpeg" />
   </audio>
 
@@ -158,35 +158,33 @@
     function updateCounter(){
       const now = new Date();
       const diff = now - startDate;
+
       const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-      counterEl.textContent = `Đã bên nhau ${days} ngày`;
+      const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+      const minutes = Math.floor((diff / (1000 * 60)) % 60);
+      const seconds = Math.floor((diff / 1000) % 60);
+
+      counterEl.textContent = `Đã bên nhau ${days} ngày ${hours} giờ ${minutes} phút ${seconds} giây`;
     }
     updateCounter();
-    setInterval(updateCounter, 1000 * 60 * 60);
+    setInterval(updateCounter, 1000);
 
+    // ===== Music =====
     const audio = document.getElementById('bgm');
     const musicBtn = document.getElementById('musicBtn');
 
-    async function hardAutoplay(){
-      try{
-        audio.muted = false;
-        audio.loop = true;
+    musicBtn.addEventListener('click', async ()=>{
+      if(audio.paused){
         await audio.play();
         musicBtn.textContent = '🎵 Đang phát';
         musicBtn.setAttribute('aria-pressed','true');
         musicBtn.classList.remove('pulse');
-      }catch(err){
+      } else {
+        audio.pause();
         musicBtn.textContent = '🎵 Bật nhạc';
-        musicBtn.classList.add('pulse');
+        musicBtn.setAttribute('aria-pressed','false');
       }
-    }
-
-    musicBtn.addEventListener('click', async ()=>{
-      if(audio.paused){ await audio.play(); musicBtn.textContent='🎵 Đang phát'; musicBtn.setAttribute('aria-pressed','true'); musicBtn.classList.remove('pulse'); }
-      else{ audio.pause(); musicBtn.textContent='🎵 Bật nhạc'; musicBtn.setAttribute('aria-pressed','false'); }
     });
-
-    window.addEventListener('load', hardAutoplay);
   </script>
 </body>
 </html>
