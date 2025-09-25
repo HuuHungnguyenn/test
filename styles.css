@@ -1,0 +1,18 @@
+:root{ --pink:#e75480; }
+body{
+margin:0; background:#fff; overflow:hidden;
+font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+display:flex; flex-direction:column; align-items:center; justify-content:center;
+height:100vh; gap:12px; cursor: crosshair;
+}
+.center-text, .counter{ position: relative; z-index: 20; user-select:none; color: var(--pink); text-align:center; }
+.center-text{ font-size:2.5rem; font-weight:500; }
+.counter{ font-size:1.5rem; font-weight:400; }
+
+.heart, .icon-burst{ position: fixed; left:0; top:0; transform: translate(-50%, -50%); pointer-events:none; will-change: transform, opacity; z-index: 5; }
+.heart svg{ display:block; filter: drop-shadow(0 2px 6px rgba(0,0,0,.2)); }
+.icon-burst{ font-size:32px; }
+
+.music-wrap{position: fixed; right:14px; top:14px; z-index:30; display:flex; flex-direction:column; align-items:flex-end; gap:6px}
+.music-btn{ background:#fff; color:#111; border:1px solid rgba(0,0,0,.1); border-radius:999px; padding:8px 12px; font-weight:600; font-size:14px; box-shadow:0 6px 20px rgba(0,0,0,.06); cursor:pointer; user-select:none; }
+.music-title{ background:rgba(255,230,238,.9); color:#d9487e; border:1px solid rgba(217,72,126,.18); padding:6px 10px; border-radius:999px; font-size:12px; font-weight:700; box-shadow:0 6px 18px rgba(217,72,126,.12); max-width:240px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
