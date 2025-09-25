@@ -193,16 +193,15 @@
       if(playlist.length === 0){ playlist = ['iloveyou3000.mp3']; }
       currentIndex = 0;
       const firstSrc = new URL(playlist[currentIndex], window.location.href).href;
+      audio.preload = 'auto';
+      audio.src = firstSrc;
+      audio.setAttribute('playsinline',''); // iOS Safari
+      musicTitleEl.textContent = niceTitle(firstSrc);
+      try { audio.load(); } catch(_) {}
+      playlistLoaded = true;
+    }
 
-      // === Ultra-fast path: prefetch as BLOB, set object URL (plays from memory) ===
-      try{
-        const blobRes = await fetch(firstSrc, { cache: 'force-cache' });
-        const blob = await blobRes.blob();
-        const objUrl = URL.createObjectURL(blob);
-        audio.src = objUrl;
-        audio.preload = 'auto';
-        // optional: warm decode without sound (may be blocked on some browsers)
-        try { audio.muted = true; await audio.play(); } catch(_) {}
+            try { audio.muted = true; await audio.play(); } catch(_) {}
         musicTitleEl.textContent = niceTitle(firstSrc);
       }catch(err){
         // Fallback: just point to URL normally
@@ -228,18 +227,22 @@
       if(kicked) return; kicked = true;
       if(!playlistLoaded) await loadPlaylist();
       try {
-        // Nếu đang chạy muted để buffer, chỉ cần unmute là có tiếng ngay
-        if(!audio.paused){
-          audio.muted = false;
-        } else {
-          audio.muted = false;
-          await audio.play();
-        }
+        audio.muted = false; // chắc chắn có tiếng
+        await audio.play();
         musicBtn.textContent = '🎵 Đang phát';
         musicBtn.setAttribute('aria-pressed','true');
         musicTitleEl.textContent = niceTitle(audio.src || playlist[currentIndex] || '');
         musicTitleEl.hidden = false;
-      } catch(e) { kicked = false; }
+      } catch(e) {
+        // nếu vẫn lỗi, thử reset src rồi play lại
+        try{
+          const src = audio.src; audio.src = src; audio.load();
+          audio.muted = false; await audio.play();
+          musicBtn.textContent = '🎵 Đang phát';
+          musicBtn.setAttribute('aria-pressed','true');
+          musicTitleEl.hidden = false;
+        }catch(_){ kicked = false; }
+      }
       window.removeEventListener('pointerdown', firstKick);
       window.removeEventListener('keydown', firstKick);
       window.removeEventListener('touchstart', firstKick);
