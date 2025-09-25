@@ -82,23 +82,25 @@
     function createHeart(){
       const svgNS='http://www.w3.org/2000/svg';
       const svg=document.createElementNS(svgNS,'svg');
-      svg.setAttribute('viewBox','0 0 512 512');
+      // Rounded Heart Shape: khe nông, đáy bo mềm
+      svg.setAttribute('viewBox','0 0 32 32');
       svg.setAttribute('class','heart');
 
       const path=document.createElementNS(svgNS,'path');
-      // Path tối giản cho tim mượt hơn khi nhỏ
-      path.setAttribute('d','M256 464 L96 304 C32 240, 32 144, 96 80 C160 16, 256 48, 256 112 C256 48, 352 16, 416 80 C480 144, 480 240, 416 304 Z');
+      // Path rounded, cân đối khi render nhỏ
+      path.setAttribute('d','M16 30 C 8 23, 3 15, 8 9 C 11 6, 16 8, 16 11 C 16 8, 21 6, 24 9 C 29 15, 24 23, 16 30 Z');
       const base=COLORS[Math.random()*COLORS.length|0];
       path.setAttribute('fill', base);
       path.setAttribute('stroke','rgba(255,255,255,.65)');
-      path.setAttribute('stroke-width','12');
+      path.setAttribute('stroke-width','0.7');
+      path.setAttribute('shape-rendering','geometricPrecision');
       svg.appendChild(path);
 
       const left=Math.random()*100;
-      const rot=(Math.random()*16 - 8).toFixed(1);
+      const rot=(Math.random()*12 - 6).toFixed(1); // xoay nhẹ hơn cho dịu
       const dur=(Math.random()*4 + 7).toFixed(2)+'s';
       const op=(Math.random()*0.25 + 0.75).toFixed(2);
-      const amp=(Math.random()*40 - 20).toFixed(0)+'px';
+      const amp=(Math.random()*36 - 18).toFixed(0)+'px';
 
       svg.style.left=left+'vw';
       svg.style.setProperty('--rot', rot+'deg');
