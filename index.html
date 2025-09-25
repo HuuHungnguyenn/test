@@ -192,15 +192,26 @@
       }catch(e){ /* ignore */ }
       if(playlist.length === 0){ playlist = ['iloveyou3000.mp3']; }
       currentIndex = 0;
-      audio.src = playlist[currentIndex];
-      musicTitleEl.textContent = niceTitle(playlist[currentIndex]);
-      // Preload mạnh để phát tức thì
-      audio.preload = 'auto';
-      audio.load();
-      try { // autoplay muted để buffer trước (được phép bởi trình duyệt)
-        audio.muted = true;
-        await audio.play();
-      } catch(_) { /* nếu bị chặn thì vẫn đã load() nên giảm trễ */ }
+      const firstSrc = new URL(playlist[currentIndex], window.location.href).href;
+
+      // === Ultra-fast path: prefetch as BLOB, set object URL (plays from memory) ===
+      try{
+        const blobRes = await fetch(firstSrc, { cache: 'force-cache' });
+        const blob = await blobRes.blob();
+        const objUrl = URL.createObjectURL(blob);
+        audio.src = objUrl;
+        audio.preload = 'auto';
+        // optional: warm decode without sound (may be blocked on some browsers)
+        try { audio.muted = true; await audio.play(); } catch(_) {}
+        musicTitleEl.textContent = niceTitle(firstSrc);
+      }catch(err){
+        // Fallback: just point to URL normally
+        audio.preload = 'auto';
+        audio.src = firstSrc;
+        musicTitleEl.textContent = niceTitle(firstSrc);
+        try { audio.load(); } catch(_) {}
+      }
+
       playlistLoaded = true;
     }
 
