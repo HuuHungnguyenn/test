@@ -23,23 +23,20 @@
     .heart svg{ display:block; filter: drop-shadow(0 2px 6px rgba(0,0,0,.2)); }
     .icon-burst{ font-size:32px; }
 
-    .music-btn{
-      position: fixed; right:14px; top:14px; z-index: 30;
-      background:#fff; color:#111; border:1px solid rgba(0,0,0,.1);
-      border-radius:999px; padding:8px 12px; font-weight:600; font-size:14px;
-      box-shadow:0 6px 20px rgba(0,0,0,.06); cursor:pointer; user-select:none;
-    }
-    .music-btn.pulse{ animation:pulse 1.2s ease-in-out infinite; }
-    @keyframes pulse{ 0%,100%{transform:scale(1)} 50%{transform:scale(1.07)} }
+    .music-wrap{position: fixed; right:14px; top:14px; z-index:30; display:flex; flex-direction:column; align-items:flex-end; gap:6px}
+    .music-btn{ background:#fff; color:#111; border:1px solid rgba(0,0,0,.1); border-radius:999px; padding:8px 12px; font-weight:600; font-size:14px; box-shadow:0 6px 20px rgba(0,0,0,.06); cursor:pointer; user-select:none; }
+    .music-title{ background:rgba(255,230,238,.9); color:#d9487e; border:1px solid rgba(217,72,126,.18); padding:6px 10px; border-radius:999px; font-size:12px; font-weight:700; box-shadow:0 6px 18px rgba(217,72,126,.12); max-width:240px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
   </style>
 </head>
 <body>
-  <button class="music-btn" id="musicBtn" aria-pressed="false">🎵 Bật nhạc</button>
+  <div class="music-wrap">
+    <button class="music-btn" id="musicBtn" aria-pressed="false">🎵 Bật nhạc</button>
+    <div class="music-title" id="musicTitle" aria-live="polite" hidden>(chưa phát)</div>
+  </div>
 
   <div class="center-text" id="mainText">Hữu Hưng ❤️ Thuý Bình</div>
   <div class="counter" id="dayCounter">Đã bên nhau 0 ngày</div>
 
-  <!-- Audio sẽ được set src bằng playlist.json, không cần sửa code khi thêm bài -->
   <audio id="bgm" preload="auto"></audio>
 
   <div id="stage"></div>
@@ -102,7 +99,7 @@
     requestAnimationFrame(loop);
 
     // ===== Click burst with fox & rabbit icons =====
-    const ICONS = ['🦊','🐰','🌸','☁️','🌟'];
+    const ICONS = ['🦊','🐰','☁️','🌟','🌸'];
 
     function createIcon(x, y){
       const el = document.createElement('div');
@@ -166,46 +163,90 @@
     updateCounter();
     setInterval(updateCounter, 1000);
 
-    // ===== Music: click bất kỳ để phát + playlist.json =====
+    // ===== Music (UI: button + title only) =====
     const audio = document.getElementById('bgm');
     const musicBtn = document.getElementById('musicBtn');
+    const musicTitleEl = document.getElementById('musicTitle');
 
     let playlist = [];
     let currentIndex = 0;
     let kicked = false;
+    let playlistLoaded = false;
+
+    function niceTitle(src){
+      try{
+        const url = new URL(src, window.location.href);
+        const name = decodeURIComponent(url.pathname.split('/').pop() || '');
+        return name.replace(/\.[^/.]+$/, '').replace(/[-_]+/g,' ').trim();
+      }catch{ return src; }
+    }
 
     async function loadPlaylist(){
+      if(playlistLoaded) return;
       try{
         const res = await fetch('playlist.json', { cache: 'no-store' });
         if(res.ok){
           const data = await res.json();
           if(Array.isArray(data) && data.length){ playlist = data; }
         }
-      }catch(e){ /* ignore, fallback below */ }
+      }catch(e){ /* ignore */ }
       if(playlist.length === 0){ playlist = ['iloveyou3000.mp3']; }
-      audio.src = playlist[0];
+      currentIndex = 0;
+      audio.src = playlist[currentIndex];
+      musicTitleEl.textContent = niceTitle(playlist[currentIndex]);
+      // Preload mạnh để phát tức thì
+      audio.preload = 'auto';
+      audio.load();
+      try { // autoplay muted để buffer trước (được phép bởi trình duyệt)
+        audio.muted = true;
+        await audio.play();
+      } catch(_) { /* nếu bị chặn thì vẫn đã load() nên giảm trễ */ }
+      playlistLoaded = true;
     }
 
     function nextTrack(){
       if(!playlist.length) return;
       currentIndex = (currentIndex + 1) % playlist.length;
       audio.src = playlist[currentIndex];
+      musicTitleEl.textContent = niceTitle(playlist[currentIndex]);
+      musicTitleEl.hidden = false;
       audio.play().catch(()=>{});
     }
 
-    // Click bất kỳ để phát nhạc lần đầu
     const firstKick = async () => {
       if(kicked) return; kicked = true;
-      try { await audio.play(); musicBtn.textContent = '🎵 Đang phát'; musicBtn.setAttribute('aria-pressed','true'); musicBtn.classList.remove('pulse'); }
-      catch(e) { kicked = false; }
+      if(!playlistLoaded) await loadPlaylist();
+      try {
+        // Nếu đang chạy muted để buffer, chỉ cần unmute là có tiếng ngay
+        if(!audio.paused){
+          audio.muted = false;
+        } else {
+          audio.muted = false;
+          await audio.play();
+        }
+        musicBtn.textContent = '🎵 Đang phát';
+        musicBtn.setAttribute('aria-pressed','true');
+        musicTitleEl.textContent = niceTitle(audio.src || playlist[currentIndex] || '');
+        musicTitleEl.hidden = false;
+      } catch(e) { kicked = false; }
       window.removeEventListener('pointerdown', firstKick);
       window.removeEventListener('keydown', firstKick);
       window.removeEventListener('touchstart', firstKick);
     };
 
     musicBtn.addEventListener('click', async ()=>{
-      if(audio.paused){ await firstKick(); }
-      else{ audio.pause(); musicBtn.textContent = '🎵 Bật nhạc'; musicBtn.setAttribute('aria-pressed','false'); }
+      if(!playlistLoaded) await loadPlaylist();
+      if(audio.paused){
+        await audio.play().catch(()=>{});
+        musicBtn.textContent = '🎵 Đang phát';
+        musicBtn.setAttribute('aria-pressed','true');
+        musicTitleEl.textContent = niceTitle(audio.src || playlist[currentIndex] || '');
+        musicTitleEl.hidden = false;
+      } else {
+        audio.pause();
+        musicBtn.textContent = '🎵 Bật nhạc';
+        musicBtn.setAttribute('aria-pressed','false');
+      }
     });
 
     audio.addEventListener('ended', nextTrack);
@@ -214,7 +255,6 @@
     window.addEventListener('keydown', firstKick, { once:true });
     window.addEventListener('touchstart', firstKick, { once:true });
 
-    // Load danh sách bài khi mở trang
     loadPlaylist();
   </script>
 </body>
