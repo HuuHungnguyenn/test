@@ -39,7 +39,7 @@
   <div class="center-text" id="mainText">Hữu Hưng ❤️ Thuý Bình</div>
   <div class="counter" id="dayCounter">Đã bên nhau 0 ngày</div>
 
-  <!-- Audio sẽ được set src bằng playlist.json -->
+  <!-- Audio sẽ được set src bằng playlist.json, không cần sửa code khi thêm bài -->
   <audio id="bgm" preload="auto"></audio>
 
   <div id="stage"></div>
@@ -101,8 +101,8 @@
     }
     requestAnimationFrame(loop);
 
-    // ===== Click burst icons =====
-    const ICONS = ['🦊','🐰','☁️','🌟'🌸];
+    // ===== Click burst with fox & rabbit icons =====
+    const ICONS = ['🦊','🐰'];
 
     function createIcon(x, y){
       const el = document.createElement('div');
