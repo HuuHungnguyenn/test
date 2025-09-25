@@ -32,25 +32,36 @@
       font-size: clamp(14px, 4vw, 22px);
     }
 
-    .heart{
+    /* Wrapper + SVG tách animation để mượt, không khựng */
+    .heart{ /* wrapper */
       position:absolute;
-      bottom:-50px;
-      width:28px;height:28px;
+      bottom:-60px;
       pointer-events:none;
-      animation: floatUp var(--dur,8s) linear forwards, drift var(--dur,8s) ease-in-out forwards;
-      filter: drop-shadow(0 6px 10px rgba(0,0,0,.08));
-      opacity: var(--op,.9);
-      left: 50vw;
+      left:50vw;
+      animation: sway var(--dur,8s) ease-in-out infinite;
+      will-change: transform;
     }
+    .heart-svg{ /* svg bên trong */
+      width: var(--size,44px); /* tim to hơn, có thể chỉnh qua --size */
+      height: auto; /* giữ đúng tỷ lệ, không bị vuông */
+      filter: drop-shadow(0 6px 10px rgba(0,0,0,.1));
+      opacity: var(--op,.9);
+      animation: floatUp var(--dur,8s) linear forwards;
+      will-change: transform, opacity;
+      display:block;
+    }
+
     @keyframes floatUp{
       0%{ transform: translateY(0) rotate(var(--rot,0deg)) scale(1); opacity:var(--op,.9);} 
       70%{ opacity:1; }
-      100%{ transform: translateY(-120vh) rotate(var(--rot,0deg)) scale(1.05); opacity:0;}
+      100%{ transform: translateY(-130vh) rotate(var(--rot,0deg)) scale(1.08); opacity:0;}
     }
-    @keyframes drift{
-      0%  { margin-left: 0; }
-      50% { margin-left: var(--amp,24px); }
-      100%{ margin-left: calc(var(--amp,24px) * -1); }
+    @keyframes sway{
+      0%  { transform: translateX(0); }
+      25% { transform: translateX(var(--amp,40px)); }
+      50% { transform: translateX(0); }
+      75% { transform: translateX(calc(var(--amp,40px) * -1)); }
+      100%{ transform: translateX(0); }
     }
   </style>
 </head>
@@ -80,40 +91,45 @@
     const COLORS=['#ff9aa2','#ffb3ba','#ffc2d1','#ffd1dc','#ffadc6','#ff8fab','#f48fb1','#f6a6d1','#ffa3a3','#ff8ea1'];
 
     function createHeart(){
+      const wrap=document.createElement('div');
+      wrap.className='heart';
+
       const svgNS='http://www.w3.org/2000/svg';
       const svg=document.createElementNS(svgNS,'svg');
-      // Rounded Heart Shape: khe nông, đáy bo mềm
-      svg.setAttribute('viewBox','0 0 32 32');
-      svg.setAttribute('class','heart');
+      svg.setAttribute('viewBox','0 0 32 29'); // đúng tỉ lệ tim, tránh bị vuông
+      svg.classList.add('heart-svg');
+      svg.style.setProperty('--size','48px'); // to hơn nữa nếu muốn
 
       const path=document.createElementNS(svgNS,'path');
-      // Path rounded, cân đối khi render nhỏ
+      // Rounded Heart Shape (khe nông, đáy bo mềm)
       path.setAttribute('d','M16 30 C 8 23, 3 15, 8 9 C 11 6, 16 8, 16 11 C 16 8, 21 6, 24 9 C 29 15, 24 23, 16 30 Z');
       const base=COLORS[Math.random()*COLORS.length|0];
       path.setAttribute('fill', base);
-      path.setAttribute('stroke','rgba(255,255,255,.65)');
-      path.setAttribute('stroke-width','0.7');
+      path.setAttribute('stroke','rgba(255,255,255,.55)');
+      path.setAttribute('stroke-width','0.6');
       path.setAttribute('shape-rendering','geometricPrecision');
       svg.appendChild(path);
 
+      // tham số random mượt mà hơn
       const left=Math.random()*100;
-      const rot=(Math.random()*12 - 6).toFixed(1); // xoay nhẹ hơn cho dịu
+      const rot=(Math.random()*26 - 13).toFixed(1); // xoay vừa phải
       const dur=(Math.random()*4 + 7).toFixed(2)+'s';
       const op=(Math.random()*0.25 + 0.75).toFixed(2);
-      const amp=(Math.random()*36 - 18).toFixed(0)+'px';
+      const amp=(Math.random()*80 - 40).toFixed(0)+'px';
 
-      svg.style.left=left+'vw';
+      wrap.style.left=left+'vw';
+      wrap.style.setProperty('--dur', dur);
+      wrap.style.setProperty('--amp', amp);
       svg.style.setProperty('--rot', rot+'deg');
-      svg.style.setProperty('--dur', dur);
       svg.style.setProperty('--op', op);
-      svg.style.setProperty('--amp', amp);
 
-      document.body.appendChild(svg);
-      setTimeout(()=>svg.remove(),12000);
+      wrap.appendChild(svg);
+      document.body.appendChild(wrap);
+      setTimeout(()=>wrap.remove(),13000);
     }
 
-    const seed=32;for(let i=0;i<seed;i++){setTimeout(createHeart,i*120);} 
-    setInterval(createHeart,520);
+    const seed=36;for(let i=0;i<seed;i++){setTimeout(createHeart,i*100);} 
+    setInterval(createHeart,420);
   </script>
 </body>
 </html>
