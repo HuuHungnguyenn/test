@@ -6,7 +6,7 @@
   <title>In Love</title>
   <style>
     :root{ 
-      --pink:#f06292;
+      --pink:#FF9AA2;
       --bg:#fff; 
       --text:#333; 
     }
@@ -82,14 +82,14 @@
     tick(); setInterval(tick,1000);
 
     /* HEARTS */
-    const COLORS=['#ff9aa2','#ffb3ba','#ffc2d1','#ffd1dc','#ffadc6','#ff8fab','#f48fb1','#f6a6d1','#ffa3a3','#ff8ea1'];
+    const COLORS=['#FF9AA2','#FEB7B2','#FFDAC1','#E2F0CB','#B5EAD7','#C7CEEA'];
     function createHeart(){
       const wrap=document.createElement('div'); wrap.className='heart';
       const svgNS='http://www.w3.org/2000/svg';
       const svg=document.createElementNS(svgNS,'svg'); svg.setAttribute('viewBox','0 0 32 29'); svg.classList.add('heart-svg');
       const path=document.createElementNS(svgNS,'path');
       path.setAttribute('d','M16 30 C 8 23, 3 15, 8 9 C 11 6, 16 8, 16 11 C 16 8, 21 6, 24 9 C 29 15, 24 23, 16 30 Z');
-      const base=COLORS[Math.random()*COLORS.length|0];
+      const base=COLORS[Math.floor(Math.random()*COLORS.length)];
       path.setAttribute('fill', base); path.setAttribute('stroke','rgba(255,255,255,.55)'); path.setAttribute('stroke-width','0.6'); path.setAttribute('shape-rendering','geometricPrecision');
       svg.appendChild(path);
       const left=Math.random()*100, rot=(Math.random()*26 - 13).toFixed(1), dur=(Math.random()*4 + 7).toFixed(2)+'s', op=(Math.random()*0.25 + 0.75).toFixed(2), amp=(Math.random()*80 - 40).toFixed(0)+'px';
