@@ -60,8 +60,8 @@
 
   // ===== Playlist hardcode =====
   const PLAYLIST = [
-    'iloveyou3000.mp3',
     'Mirrors.mp3',
+    'iloveyou3000.mp3',
     'youngandbeautiful.mp3'
   ];
   let currentIndex = 0;
@@ -97,7 +97,7 @@
   const firstKick = async ()=>{
     if(kicked) return; kicked = true;
     try{
-      audio.muted = false; // đảm bảo có tiếng
+      audio.muted = false; 
       await audio.play();
       musicBtn.textContent = '🎵 Đang phát';
       musicBtn.setAttribute('aria-pressed','true');
