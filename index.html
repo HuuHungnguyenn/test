@@ -3,26 +3,115 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Đếm Ngày Yêu — Bước 1</title>
+  <title>Đếm Ngày Yêu — Pastel</title>
   <style>
-    :root{ --pink:#f6b4c6; --bg:#fff7fb; }
-    html,body{ height:100%; margin:0; }
+    :root{ 
+      --pink:#f06292;
+      --bg:#fff; 
+      --text:#333; 
+    }
+    html,body{ height:100%; margin:0; overflow:hidden; }
     body{
       display:grid; place-items:center;
-      font-family: "SF Pro Display", "SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial;
+      font-family: "SF Pro Text", "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial;
       background: var(--bg);
+      color: var(--text);
       -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
     }
-    .text{
+    main{ text-align:center; padding:24px; position:relative; z-index:2; }
+    .title{
       color: var(--pink);
-      font-weight: 700;
-      font-size: clamp(20px, 6vw, 40px);
-      text-align: center;
-      letter-spacing: .3px;
+      font-weight:700;
+      font-size: clamp(28px, 7.5vw, 56px);
+      letter-spacing:.2px;
+    }
+    .counter{
+      margin-top:12px;
+      color: var(--pink);
+      font-weight:600;
+      font-size: clamp(14px, 4vw, 22px);
+    }
+
+    .heart{
+      position:absolute;
+      bottom:-50px;
+      width:28px;height:28px;
+      pointer-events:none;
+      animation: floatUp var(--dur,8s) linear forwards, drift var(--dur,8s) ease-in-out forwards;
+      filter: drop-shadow(0 6px 10px rgba(0,0,0,.08));
+      opacity: var(--op,.9);
+      left: 50vw;
+    }
+    @keyframes floatUp{
+      0%{ transform: translateY(0) rotate(var(--rot,0deg)) scale(1); opacity:var(--op,.9);} 
+      70%{ opacity:1; }
+      100%{ transform: translateY(-120vh) rotate(var(--rot,0deg)) scale(1.05); opacity:0;}
+    }
+    @keyframes drift{
+      0%  { margin-left: 0; }
+      50% { margin-left: var(--amp,24px); }
+      100%{ margin-left: calc(var(--amp,24px) * -1); }
     }
   </style>
 </head>
 <body>
-  <div class="text">Đếm Ngày Yêu 💗</div>
+  <main>
+    <div class="title">Hữu Hưng ❤️ Thúy Bình</div>
+    <div class="counter" id="counter">We were together —</div>
+  </main>
+
+  <script>
+    const START = new Date('2025-03-20T00:00:00');
+    const $counter = document.getElementById('counter');
+
+    function pad(n){ return String(n).padStart(2,'0'); }
+    function tick(){
+      const now = new Date();
+      let diff = now - START;
+      const sec=1000, min=60*sec, hour=60*min, day=24*hour;
+      const days=Math.floor(diff/day); diff%=day;
+      const hours=Math.floor(diff/hour); diff%=hour;
+      const minutes=Math.floor(diff/min); diff%=min;
+      const seconds=Math.floor(diff/sec);
+      $counter.textContent=`We were together ${days} day ${pad(hours)} hour ${pad(minutes)} min ${pad(seconds)} second`;
+    }
+    tick(); setInterval(tick,1000);
+
+    const COLORS=['#ff9aa2','#ffb3ba','#ffc2d1','#ffd1dc','#ffadc6','#ff8fab','#f48fb1','#f6a6d1','#ffa3a3','#ff8ea1'];
+
+    function createHeart(){
+      const svgNS='http://www.w3.org/2000/svg';
+      const svg=document.createElementNS(svgNS,'svg');
+      svg.setAttribute('viewBox','0 0 512 512');
+      svg.setAttribute('class','heart');
+
+      const path=document.createElementNS(svgNS,'path');
+      // Path tối giản cho tim mượt hơn khi nhỏ
+      path.setAttribute('d','M256 464 L96 304 C32 240, 32 144, 96 80 C160 16, 256 48, 256 112 C256 48, 352 16, 416 80 C480 144, 480 240, 416 304 Z');
+      const base=COLORS[Math.random()*COLORS.length|0];
+      path.setAttribute('fill', base);
+      path.setAttribute('stroke','rgba(255,255,255,.65)');
+      path.setAttribute('stroke-width','12');
+      svg.appendChild(path);
+
+      const left=Math.random()*100;
+      const rot=(Math.random()*16 - 8).toFixed(1);
+      const dur=(Math.random()*4 + 7).toFixed(2)+'s';
+      const op=(Math.random()*0.25 + 0.75).toFixed(2);
+      const amp=(Math.random()*40 - 20).toFixed(0)+'px';
+
+      svg.style.left=left+'vw';
+      svg.style.setProperty('--rot', rot+'deg');
+      svg.style.setProperty('--dur', dur);
+      svg.style.setProperty('--op', op);
+      svg.style.setProperty('--amp', amp);
+
+      document.body.appendChild(svg);
+      setTimeout(()=>svg.remove(),12000);
+    }
+
+    const seed=32;for(let i=0;i<seed;i++){setTimeout(createHeart,i*120);} 
+    setInterval(createHeart,520);
+  </script>
 </body>
 </html>
