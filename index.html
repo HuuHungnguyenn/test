@@ -66,6 +66,7 @@
   ];
   let currentIndex = 0;
   let kicked = false;
+  let ready = false; // đã đủ buffer để phát mượt chưa?
 
   function niceTitle(src){
     try{
@@ -80,9 +81,20 @@
     const firstSrc = new URL(PLAYLIST[currentIndex], window.location.href).href;
     audio.preload = 'auto';
     audio.src = firstSrc;
+    audio.setAttribute('playsinline','');
     musicTitleEl.textContent = niceTitle(firstSrc);
     try{ audio.load(); }catch(_){}
   }
+
+  // đánh dấu ready khi đủ buffer
+  audio.addEventListener('canplaythrough', ()=>{ ready = true; });
+  audio.addEventListener('loadeddata', ()=>{ /* đôi khi canplaythrough không bắn trên iOS */ ready = ready || audio.readyState >= 2; });
+  // nếu bị stall/lỗi, thử nạp lại và phát tiếp
+  ['stalled','error','abort','emptied'].forEach(ev=>{
+    audio.addEventListener(ev, ()=>{
+      try{ const s = audio.src; audio.pause(); audio.src = s; audio.load(); if(!audio.paused) audio.play().catch(()=>{}); }catch(e){}
+    });
+  });
 
   function nextTrack(){
     if(!PLAYLIST.length) return;
@@ -94,18 +106,25 @@
   audio.addEventListener('ended', nextTrack);
 
   // First user interaction → play ASAP
+  const sleep = (ms)=>new Promise(r=>setTimeout(r,ms));
+  async function safePlayWithRetry(attempts = 3){
+    for(let i=0;i<attempts;i++){
+      try{ audio.muted = false; await audio.play(); return true; }catch(e){ await sleep(200*(i+1)); }
+    }
+    // lần cuối: reset src rồi thử 1 lần nữa
+    try{ const s = audio.src; audio.src = s; audio.load(); await audio.play(); return true; }catch(e){ return false; }
+  }
+
   const firstKick = async ()=>{
     if(kicked) return; kicked = true;
-    try{
-      audio.muted = false; // đảm bảo có tiếng
-      await audio.play();
+    // nếu chưa gán bài đầu tiên vì lý do nào đó, gắn lại
+    if(!audio.src) primeFirstTrack();
+    const ok = await safePlayWithRetry(3);
+    if(ok){
       musicBtn.textContent = '🎵 Đang phát';
       musicBtn.setAttribute('aria-pressed','true');
       musicTitleEl.hidden = false;
-    }catch(e){
-      // fallback: reset src rồi play lại 1 lần
-      try{ const s = audio.src; audio.src = s; audio.load(); await audio.play(); musicBtn.textContent='🎵 Đang phát'; musicBtn.setAttribute('aria-pressed','true'); musicTitleEl.hidden=false; }catch(_){ kicked=false; }
-    }
+    }else{ kicked = false; }
     window.removeEventListener('pointerdown', firstKick);
     window.removeEventListener('keydown', firstKick);
     window.removeEventListener('touchstart', firstKick);
