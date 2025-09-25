@@ -28,23 +28,24 @@
     @keyframes floatUp{ 0%{ transform: translateY(0) rotate(var(--rot,0deg)) scale(1); opacity:var(--op,.9);} 70%{ opacity:1; } 100%{ transform: translateY(-130vh) rotate(var(--rot,0deg)) scale(1.08); opacity:0;} }
     @keyframes sway{ 0%{ transform: translateX(0);} 25%{ transform: translateX(var(--amp,40px)); } 50%{ transform: translateX(0);} 75%{ transform: translateX(calc(var(--amp,40px) * -1)); } 100%{ transform: translateX(0);} }
 
-    /* MUSIC PLAYER (top-right) */
-    .player{ position: fixed; top: 12px; right: 12px; z-index: 5; background:#fff; border:1px solid #eee; box-shadow:0 10px 24px rgba(0,0,0,.08); border-radius:999px; display:flex; align-items:center; gap:8px; padding:8px 12px; }
-    .player button{ appearance:none; border:0; background:transparent; cursor:pointer; font-size:16px; line-height:1; padding:6px; border-radius:10px; }
+    /* MUSIC PLAYER */
+    .player{ position: fixed; top: 12px; right: 12px; z-index: 5; background:#fff; border:1px solid #eee; box-shadow:0 10px 24px rgba(0,0,0,.08); border-radius:12px; padding:10px 14px; text-align:center; min-width:200px; }
+    .player .title{ font-size:14px; font-weight:600; color:#444; margin-bottom:6px; }
+    .player .progress{ width:100%; }
+    .player .controls{ margin-top:6px; display:flex; justify-content:center; gap:10px; }
+    .player button{ appearance:none; border:0; background:transparent; cursor:pointer; font-size:18px; line-height:1; padding:4px; border-radius:8px; }
     .player button:hover{ background:#f7f7f7; }
-    .player .title{ font-size:14px; font-weight:600; color:#444; }
-    .player input[type="range"]{ accent-color: var(--pink); width:110px; height:4px; }
-
-    @media (max-width: 480px){ .player .title{ display:none;} .player input[type="range"]{ width:80px; } }
   </style>
 </head>
 <body>
   <div class="player" aria-label="music player">
-    <button id="prev" title="Bài trước">⏮️</button>
-    <button id="play" title="Phát/Tạm dừng">▶️</button>
-    <button id="next" title="Bài tiếp">⏭️</button>
     <div class="title" id="songTitle">—</div>
-    <input id="vol" type="range" min="0" max="1" step="0.01" title="Âm lượng" />
+    <input id="progress" class="progress" type="range" min="0" max="100" step="1" value="0" />
+    <div class="controls">
+      <button id="prev" title="Bài trước">⏮️</button>
+      <button id="play" title="Phát/Tạm dừng">▶️</button>
+      <button id="next" title="Bài tiếp">⏭️</button>
+    </div>
     <audio id="audio" preload="auto"></audio>
   </div>
 
@@ -92,15 +93,40 @@
       { title: 'I Love You 3000', file: 'iloveyou3000.mp3' },
       { title: 'Young And Beautiful', file: 'youngandbeautiful.mp3' },
     ];
-    let i = 0; const audio = document.getElementById('audio'); const playBtn = document.getElementById('play'); const prevBtn = document.getElementById('prev'); const nextBtn = document.getElementById('next'); const titleEl = document.getElementById('songTitle'); const vol = document.getElementById('vol');
-    function loadSong(idx){ const s=songs[idx]; audio.src=s.file; titleEl.textContent=s.title; }
+    let i = 0;
+    const audio = document.getElementById('audio');
+    const playBtn = document.getElementById('play');
+    const prevBtn = document.getElementById('prev');
+    const nextBtn = document.getElementById('next');
+    const titleEl = document.getElementById('songTitle');
+    const progress = document.getElementById('progress');
+
+    function loadSong(idx){
+      const s=songs[idx];
+      audio.src=s.file;
+      titleEl.textContent=s.title;
+    }
+
     function play(){ audio.play(); playBtn.textContent='⏸️'; }
     function pause(){ audio.pause(); playBtn.textContent='▶️'; }
+
     playBtn.addEventListener('click', ()=> audio.paused ? play() : pause());
     prevBtn.addEventListener('click', ()=>{ i=(i-1+songs.length)%songs.length; loadSong(i); play(); });
     nextBtn.addEventListener('click', ()=>{ i=(i+1)%songs.length; loadSong(i); play(); });
     audio.addEventListener('ended', ()=> nextBtn.click());
-    vol.value=0.8; audio.volume=0.8; vol.addEventListener('input', ()=> audio.volume=+vol.value);
+
+    // progress bar update
+    audio.addEventListener('timeupdate', ()=>{
+      if (!isNaN(audio.duration)){
+        progress.value=(audio.currentTime/audio.duration*100)||0;
+      }
+    });
+    progress.addEventListener('input', ()=>{
+      if (!isNaN(audio.duration)){
+        audio.currentTime = progress.value/100*audio.duration;
+      }
+    });
+
     loadSong(i);
   </script>
 </body>
