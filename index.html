@@ -6,9 +6,11 @@
   <title>In Love</title>
   <style>
     :root{ 
-      --pink:#FF9AA2;
+      --pink:#FF9AA2; /* pastel hồng chủ đạo */
       --bg:#fff; 
       --text:#333; 
+      --chip:#ffe6ea; /* nền chip cute */
+      --chip-border:#ffd2d9;
     }
     html,body{ height:100%; margin:0; overflow:hidden; }
     body{
@@ -29,15 +31,27 @@
     @keyframes floatUp{ 0%{ transform: translateY(0) rotate(var(--rot,0deg)) scale(1); opacity:var(--op,.9);} 70%{ opacity:1; } 100%{ transform: translateY(-130vh) rotate(var(--rot,0deg)) scale(1.08); opacity:0;} }
     @keyframes sway{ 0%{ transform: translateX(0);} 25%{ transform: translateX(var(--amp,40px)); } 50%{ transform: translateX(0);} 75%{ transform: translateX(calc(var(--amp,40px) * -1)); } 100%{ transform: translateX(0);} }
 
-    /* MUSIC PLAYER */
-    .player{ position: fixed; top: 12px; right: 12px; z-index: 5; background:#fff; border:1px solid #eee; box-shadow:0 10px 24px rgba(0,0,0,.08); border-radius:12px; padding:10px 14px; text-align:center; min-width:220px; }
-    .player .title{ font-size:14px; font-weight:600; color:#444; margin-bottom:6px; }
-    .player .progress{ width:100%; }
-    .player .time{ margin-top:6px; font-size:12px; color:#666; display:flex; justify-content:space-between; }
-    .player .controls{ margin-top:6px; display:flex; justify-content:center; gap:10px; }
-    .player button{ appearance:none; border:0; background:transparent; cursor:pointer; font-size:18px; line-height:1; padding:4px; border-radius:8px; }
-    .player button:hover{ background:#f7f7f7; }
+    /* MUSIC TOGGLE (cute chip) */
+    .music-toggle{
+      position: fixed; top: 12px; right: 12px; z-index: 6;
+      display:flex; align-items:center; gap:8px;
+      padding:8px 12px; border-radius:999px; border:1px solid var(--chip-border);
+      background: var(--chip); color:#cc4d64; font-weight:700; cursor:pointer; user-select:none;
+      box-shadow:0 10px 20px rgba(255,153,170,.25);
+    }
+    .music-toggle:hover{ filter:brightness(1.03); }
 
+    /* MUSIC PLAYER (cute) */
+    .player{ position: fixed; top: 60px; right: 12px; z-index: 5; background:#fff; border:1px solid #f3d2da; box-shadow:0 12px 28px rgba(255,153,170,.25); border-radius:16px; padding:12px 14px; text-align:center; min-width:230px; display:none; }
+    .player.show{ display:block; }
+    .player .title{ font-size:14px; font-weight:700; color:#cc4d64; margin-bottom:8px; }
+    .player .progress{ width:100%; appearance:none; height:6px; border-radius:999px; background:#ffe3ea; outline:none; }
+    .player .progress::-webkit-slider-thumb{ appearance:none; width:14px; height:14px; border-radius:50%; background: var(--pink); box-shadow:0 2px 6px rgba(255,153,170,.6); }
+    .player .time{ margin-top:6px; font-size:12px; color:#a66677; display:flex; justify-content:space-between; }
+    .player .controls{ margin-top:8px; display:flex; justify-content:center; gap:10px; }
+    .player button{ appearance:none; border:0; cursor:pointer; font-size:16px; line-height:1; padding:8px; border-radius:12px; background: #ffe6ea; color:#cc4d64; }
+    .player button:hover{ background:#ffd9e1; }
+  
     /* CLICK BURST ICONS */
     .burst{ position: absolute; z-index: 4; pointer-events:none; will-change: transform, opacity; }
     @keyframes floatUpDown {
@@ -48,7 +62,13 @@
   </style>
 </head>
 <body>
-  <div class="player" aria-label="music player">
+  <!-- Cute toggle chip -->
+  <div class="music-toggle" id="musicToggle" aria-label="Bật nhạc">
+    <span id="toggleIcon">🎵</span>
+    <span id="toggleText">Bật nhạc</span>
+  </div>
+
+  <div class="player" id="player" aria-label="music player">
     <div class="title" id="songTitle">—</div>
     <input id="progress" class="progress" type="range" min="0" max="100" step="1" value="0" />
     <div class="time"><span id="elapsed">0:00</span><span id="remaining">-0:00</span></div>
@@ -121,8 +141,8 @@
       audio.src=s.file; titleEl.textContent=s.title; progress.value=0; elapsed.textContent='0:00'; remaining.textContent='-0:00';
     }
 
-    function play(){ audio.play(); playBtn.textContent='⏸️'; }
-    function pause(){ audio.pause(); playBtn.textContent='▶️'; }
+    function play(){ audio.play(); playBtn.textContent='⏸️'; toggleIcon.textContent='⏸️'; toggleText.textContent='Đang phát'; }
+    function pause(){ audio.pause(); playBtn.textContent='▶️'; toggleIcon.textContent='🎵'; toggleText.textContent='Bật nhạc'; }
 
     playBtn.addEventListener('click', ()=> audio.paused ? play() : pause());
     prevBtn.addEventListener('click', ()=>{ i=(i-1+songs.length)%songs.length; loadSong(i); play(); });
@@ -131,52 +151,44 @@
 
     // cập nhật thanh thời gian + bộ đếm
     audio.addEventListener('loadedmetadata', ()=>{
-      progress.value = 0;
-      elapsed.textContent='0:00';
-      remaining.textContent = `-${fmt(audio.duration)}`;
+      progress.value = 0; elapsed.textContent='0:00'; remaining.textContent = `-${fmt(audio.duration)}`;
     });
     audio.addEventListener('timeupdate', ()=>{
       if (!isNaN(audio.duration)){
         const cur = audio.currentTime; const dur = audio.duration;
-        progress.value = (cur/dur*100)||0;
-        elapsed.textContent = fmt(cur);
-        remaining.textContent = `-${fmt(Math.max(dur-cur,0))}`;
+        progress.value = (cur/dur*100)||0; elapsed.textContent = fmt(cur); remaining.textContent = `-${fmt(Math.max(dur-cur,0))}`;
       }
     });
-    progress.addEventListener('input', ()=>{
-      if (!isNaN(audio.duration)){
-        audio.currentTime = progress.value/100*audio.duration;
+    progress.addEventListener('input', ()=>{ if (!isNaN(audio.duration)) audio.currentTime = progress.value/100*audio.duration; });
+
+    // Toggle hiển thị player + play lần đầu
+    const player = document.getElementById('player');
+    const musicToggle = document.getElementById('musicToggle');
+    const toggleIcon = document.getElementById('toggleIcon');
+    const toggleText = document.getElementById('toggleText');
+
+    musicToggle.addEventListener('click', ()=>{
+      if (player.classList.contains('show')){
+        pause();
+        player.classList.remove('show');
+      } else {
+        player.classList.add('show');
+        if (!audio.src) loadSong(i);
+        play();
       }
     });
 
-    loadSong(i);
-
-    /* CLICK BURST ICONS + autoplay on first click */
+    /* CLICK BURST ICONS */
     const ICONS = ['🦊','🦊','✈️','🐰','🐰','☁️','🌟','🌸','🎵','🎧'];
-    let didAutoPlay = false;
-
     function spawnIcon(x, y){
-      const el = document.createElement('div');
-      el.className = 'burst';
-      el.textContent = ICONS[Math.floor(Math.random()*ICONS.length)];
-      el.style.left = x + 'px';
-      el.style.top  = y + 'px';
-      el.style.fontSize = (Math.random()*14 + 24) + 'px';
+      const el = document.createElement('div'); el.className = 'burst'; el.textContent = ICONS[Math.floor(Math.random()*ICONS.length)];
+      el.style.left = x + 'px'; el.style.top  = y + 'px'; el.style.fontSize = (Math.random()*14 + 24) + 'px';
       el.style.setProperty('--dx', (Math.random()*200-100).toFixed(0)+'px');
       el.style.setProperty('--rot', (Math.random()*60-30).toFixed(0)+'deg');
       el.style.animation = `floatUpDown ${(Math.random()*1+2).toFixed(2)}s ease-in-out forwards`;
-      document.body.appendChild(el);
-      setTimeout(()=> el.remove(), 3000);
+      document.body.appendChild(el); setTimeout(()=> el.remove(), 3000);
     }
-
-    document.addEventListener('click', (e)=>{
-      if (e.target.closest('.player')) return;
-      const burstCount = Math.floor(Math.random()*6)+8; // 8-14 icon mỗi lần
-      for (let j=0;j<burstCount;j++){
-        setTimeout(()=> spawnIcon(e.clientX, e.clientY), j*40);
-      }
-      if (!didAutoPlay){ didAutoPlay = true; if (audio.src) { play(); } else { loadSong(i); play(); } }
-    });
+    document.addEventListener('click', (e)=>{ if (!e.target.closest('.player') && !e.target.closest('#musicToggle')){ const n=Math.floor(Math.random()*6)+8; for (let j=0;j<n;j++){ setTimeout(()=> spawnIcon(e.clientX, e.clientY), j*40);} } });
   </script>
 </body>
 </html>
