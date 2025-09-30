@@ -59,7 +59,18 @@
       40%  { transform: translate(var(--dx,0), -120px) scale(1.1); opacity: 1; }
       100% { transform: translate(calc(var(--dx,0)*1.2), 160px) rotate(var(--rot,0deg)) scale(0.9); opacity: 0; }
     }
-  </style>
+      /* POLAROID / VINTAGE FRAMES */
+    .drop-hint{ position:fixed; inset:0; display:flex; align-items:flex-end; justify-content:center; padding:18px; pointer-events:none; z-index:1; }
+    .drop-hint .chip{ background:rgba(255,154,162,.12); color:#cc4d64; border:1px dashed #ffced4; border-radius:999px; padding:6px 12px; font-weight:700; font-size:12px; backdrop-filter: blur(2px); }
+
+    .polaroids{ position:fixed; left:0; right:0; bottom:8px; height:34vh; pointer-events:none; z-index:1; }
+    .polaroid{ position:absolute; bottom:0; width:160px; background:#fffdf5; border:1px solid #f1e6ce; border-bottom-width:20px; /* phần giấy trắng dày bên dưới */
+      box-shadow: 0 6px 16px rgba(0,0,0,.12), 0 1px 0 rgba(0,0,0,.05) inset; border-radius:6px; overflow:hidden; transform-origin:50% 100%; }
+    .polaroid img{ width:100%; height:auto; display:block; filter: sepia(.12) contrast(1.05) saturate(.9); }
+
+    .polaroid::after{ content:""; position:absolute; inset:0; background: radial-gradient(120% 70% at 50% -10%, rgba(255,255,255,.35), rgba(0,0,0,0) 40%);
+      pointer-events:none; }
+</style>
 </head>
 <body>
   <!-- Cute toggle chip -->
@@ -81,9 +92,13 @@
   </div>
 
   <main>
-    <div class="title">Hữu Hưng ❤️ Thúy Bình</div>
+    <div class="title" id="titleMain">Hữu Hưng ❤️ Thúy Bình</div>
     <div class="counter" id="counter">We were together —</div>
-  </main>
+    </main>
+
+  <!-- Polaroid container + hint -->
+  <div class="polaroids" id="polaroids"></div>
+  <div class="drop-hint" id="dropHint"><div class="chip">Kéo & thả ảnh vào đây để tạo khung vintage ✨</div></div>
 
   <script>
     /* COUNTER */
@@ -129,7 +144,7 @@
     const playBtn = document.getElementById('play');
     const prevBtn = document.getElementById('prev');
     const nextBtn = document.getElementById('next');
-    const titleEl = document.getElementById('songTitle');
+    const titleSongEl = document.getElementById('songTitle');
     const progress = document.getElementById('progress');
     const elapsed = document.getElementById('elapsed');
     const remaining = document.getElementById('remaining');
@@ -138,7 +153,7 @@
 
     function loadSong(idx){
       const s=songs[idx];
-      audio.src=s.file; titleEl.textContent=s.title; progress.value=0; elapsed.textContent='0:00'; remaining.textContent='-0:00';
+      audio.src=s.file; titleSongEl.textContent=s.title; progress.value=0; elapsed.textContent='0:00'; remaining.textContent='-0:00';
     }
 
     function play(){ audio.play(); playBtn.textContent='⏸️'; toggleIcon.textContent='⏸️'; toggleText.textContent='Đang phát'; }
@@ -189,6 +204,50 @@
       document.body.appendChild(el); setTimeout(()=> el.remove(), 3000);
     }
     document.addEventListener('click', (e)=>{ if (!e.target.closest('.player') && !e.target.closest('#musicToggle')){ const n=Math.floor(Math.random()*6)+8; for (let j=0;j<n;j++){ setTimeout(()=> spawnIcon(e.clientX, e.clientY), j*40);} } });
+    
+    /* DRAG & DROP POLAROID */
+    const polaroids = document.getElementById('polaroids');
+    const dropHint = document.getElementById('dropHint');
+
+    function makePolaroid(url){
+      const card = document.createElement('div');
+      card.className = 'polaroid';
+      const img = document.createElement('img');
+      img.src = url;
+      card.appendChild(img);
+
+      // random vị trí & góc, giữ trong màn hình
+      const vw = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0);
+      const margin = 180; // chừa 2 bên
+      const left = Math.floor(Math.random() * Math.max(10, vw - margin)) + 10; // px
+      const rot = (Math.random()*8 - 4).toFixed(1); // -4..4 độ
+      card.style.left = left + 'px';
+      card.style.transform = `rotate(${rot}deg)`;
+
+      polaroids.appendChild(card);
+    }
+
+    function handleFiles(files){
+      [...files].forEach(f=>{
+        if(!f.type.startsWith('image/')) return;
+        const reader = new FileReader();
+        reader.onload = e => makePolaroid(e.target.result);
+        reader.readAsDataURL(f);
+      });
+    }
+
+    function showHint(v){ dropHint.style.opacity = v ? 1 : 0; }
+
+    // D&D trên toàn trang
+    ['dragenter','dragover'].forEach(ev=> document.addEventListener(ev, e=>{ e.preventDefault(); e.dataTransfer && (e.dataTransfer.dropEffect='copy'); showHint(true); }, false));
+    ['dragleave','drop'].forEach(ev=> document.addEventListener(ev, e=>{ e.preventDefault(); showHint(false); }, false));
+    document.addEventListener('drop', e=>{ if(e.dataTransfer) handleFiles(e.dataTransfer.files); });
+
+    // Click nền để chọn file (fallback)
+    document.addEventListener('dblclick', (e)=>{ if (!e.target.closest('.player') && !e.target.closest('#musicToggle')){ const inp=document.createElement('input'); inp.type='file'; inp.accept='image/*'; inp.multiple=true; inp.onchange=()=> handleFiles(inp.files); inp.click(); }});
+
   </script>
+</body>
+</html>
 </body>
 </html>
